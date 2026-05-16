@@ -14,6 +14,30 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // ============================================================
+  // AUTHENTICATION: Check for API key in x-osiris-key header
+  // ============================================================
+  const apiKey = request.headers.get('x-osiris-key');
+  const requiredKey = process.env.OSIRIS_API_KEY;
+
+  if (requiredKey && apiKey !== requiredKey) {
+    return new NextResponse(
+      JSON.stringify({
+        error: 'Unauthorized',
+        message: 'Missing or invalid x-osiris-key header',
+      }),
+      {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+  }
+
+  // ============================================================
+  // RATE LIMITING
+  // ============================================================
   // request.ip is not available in all Next.js runtimes, safely fallback
   const ip = request.headers.get('x-forwarded-for') || 'unknown';
   const now = Date.now();
